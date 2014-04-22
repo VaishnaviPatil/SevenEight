@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Seven Eight</string>
+    <string name="action_settings">Settings</string>    
+
+    <string name="machine_player_name">Machine Player</string>
+    <string name="human_player_name">Human Player</string>
+    
+    <string name="hukum_label">Hukum </string>
+    <string name="score_label">Score </string>
+    <string name="colon"> : </string>
+    <string name="hands">Hands: </string>
+    <string name="score_zero">0</string>
+    
+    <string name="hukum_dialog_title">Select Trump Suite</string>
+</resources>
