@@ -7,7 +7,6 @@ import com.seveneight.R;
 import com.seveneight.logic.Card;
 import com.seveneight.logic.GameData;
 
-import android.opengl.Visibility;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.Dialog;
@@ -16,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,18 +36,23 @@ public class SevenEight extends Activity implements OnClickListener
 	private ImageView playedCard1, playedCard2;
 	private ImageView hukumImageView;
 	
-	private TextView machineScore, humanScore;
+	private TextView machineHandsScore, humanHandsScore;
 
+	private TextView machineGameScore, humanGameScore;
+	
 	/* HUKUM dialog elements */
 	private Dialog hukumDialog;
 	private ImageView[] suitesImageViews = new ImageView[4];	
 
+	private Dialog gameOver;
+	private TextView gameOverMsg;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_seven_eight);
 		
-		Log.i(LOG_TAG, "onCreate");
+		Log.d(LOG_TAG, "onCreate");
 		
 		initialiseImages();
 		dealHandCards();
@@ -101,14 +106,29 @@ public class SevenEight extends Activity implements OnClickListener
 
 		hukumImageView = (ImageView) findViewById(R.id.hukum);
 		
-		machineScore = (TextView) findViewById(R.id.machineScore);
-		humanScore = (TextView) findViewById(R.id.humanScore);
+		machineHandsScore = (TextView) findViewById(R.id.machinePlayerHandsScore);
+		humanHandsScore = (TextView) findViewById(R.id.humanPlayerHandsScore);
+		
+		machineGameScore = (TextView) findViewById(R.id.machineScore);
+		humanGameScore = (TextView) findViewById(R.id.humanScore);
+		
 		Log.i(LOG_TAG, "initialized ImageViews");
 	}
 
+	
 	private void dealHandCards()
 	{
-		gameData = new GameData();		
+		if(gameData == null)
+		{
+			gameData = new GameData(8);
+		}
+		else
+		{
+			gameData = new GameData(15 - gameData.machineHandsTodo);
+		}			
+
+		playedCard1.setImageResource(0);
+		playedCard2.setImageResource(0);		
 
 		/* Deal Hand Cards */		
 		for(int i=0; i<5; i++)
@@ -118,6 +138,9 @@ public class SevenEight extends Activity implements OnClickListener
 
 			gameData.mHandCards[i].setIsVisible(true);
 			gameData.hHandCards[i].setIsVisible(true);
+
+			mHandCardsImageViews[i].setVisibility(View.VISIBLE);
+			hHandCardsImageViews[i].setVisibility(View.VISIBLE);
 			
 			mHandCardsImageViews[i].setImageResource(gameData.mHandCards[i].getImageResourceId());
 			hHandCardsImageViews[i].setImageResource(gameData.hHandCards[i].getImageResourceId());
@@ -133,6 +156,20 @@ public class SevenEight extends Activity implements OnClickListener
 
 	private void declareHukum()
 	{
+		/* todo: see machine cards and select the trump suite */
+		if(gameData.machineHandsTodo == 8)
+		{
+			hukumDialog = new Dialog(context);
+			hukumDialog.setTitle(R.string.machine_hukum_dialog_title);
+			hukumDialog.setContentView(R.layout.machine_hukum_dialog);
+			
+			Button okButton = (Button) hukumDialog.findViewById(R.id.OK);
+			okButton.setOnClickListener(this);
+			
+			hukumDialog.show();
+			return;
+		}
+		
 		hukumDialog = new Dialog(context);
 		hukumDialog.setTitle(R.string.hukum_dialog_title);
 		hukumDialog.setContentView(R.layout.hukum_dialog);
@@ -147,7 +184,7 @@ public class SevenEight extends Activity implements OnClickListener
 			suitesImageViews[i].setOnClickListener(this);
 		}
 		hukumDialog.show();
-		Log.i(LOG_TAG, "Hukum Dialog shown");
+		Log.d(LOG_TAG, "Hukum Dialog shown");
 	}
 
 	private void dealTableCards()
@@ -158,6 +195,9 @@ public class SevenEight extends Activity implements OnClickListener
 			gameData.mTableCards[i] = gameData.getDeck().popTopCard();
 			gameData.hTableCards[i] = gameData.getDeck().popTopCard();
 
+			mTableCardsImageViews[i].setVisibility(View.VISIBLE);
+			hTableCardsImageViews[i].setVisibility(View.VISIBLE);
+			
 			/* set images and onClickListener for the open cards on the table for now */
 			if(i>=5) 
 			{
@@ -170,6 +210,26 @@ public class SevenEight extends Activity implements OnClickListener
 			}
 			else
 			{
+				try 
+				{
+					mTableCardsImageViews[i].setImageResource((R.drawable.class.getDeclaredField("back1")).getInt(null));
+					hTableCardsImageViews[i].setImageResource((R.drawable.class.getDeclaredField("back1")).getInt(null));
+				} 
+				catch (IllegalAccessException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+				catch (IllegalArgumentException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+				catch (NoSuchFieldException e) 
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				gameData.mTableCards[i].setIsVisible(false);
 				gameData.hTableCards[i].setIsVisible(false);
 			}
@@ -185,7 +245,23 @@ public class SevenEight extends Activity implements OnClickListener
 		switch(ID)
 		{
 
+		/* Deal a new game */
+		case R.id.gameOverOK:
+    	   	humanHandsScore.setText(R.string.score_zero);
+    	   	machineHandsScore.setText(R.string.score_zero);
+    	   	gameOver.dismiss();
+			dealHandCards();			
+			break;
+			
 		/* Set HUKUM */
+		case R.id.OK:
+			hukumImageView.setImageResource(R.drawable.spade);
+			gameData.setTrumpSuite('s');
+			hukumDialog.dismiss();
+			Log.i(LOG_TAG, "Trump suite=Spade");
+			dealTableCards();
+			machinePlay();
+			break;						
 		case R.id.spade:
 			hukumImageView.setImageResource(R.drawable.spade);
 			gameData.setTrumpSuite('s');
@@ -235,7 +311,6 @@ public class SevenEight extends Activity implements OnClickListener
 
 			/* Play Table Card */
 		case R.id.hTableCard1:
-			Log.i(LOG_TAG,"played card 0!");
 			playCard(gameData.hTableCards[0], hTableCardsImageViews[0], 0);
 			break;
 		case R.id.hTableCard2:
@@ -270,32 +345,40 @@ public class SevenEight extends Activity implements OnClickListener
 
 	private void playCard(Card card, ImageView cardImageView, int pos)
 	{		
-		Log.i(LOG_TAG, "Human trying to a play card at position: "+pos);
+		Log.d(LOG_TAG, "Human trying to a play card: " + card.getValue() + " of " + card.getSuite());
 		
 		if(gameData.machineTurn)
 		{
 			Toast.makeText(context, "Wait for your turn!", Toast.LENGTH_LONG).show();
 			return;
 		}		
-		cardImageView.setOnClickListener(null);		
-		cardImageView.setVisibility(View.INVISIBLE);
-		card.setIsVisible(false);
 		
 		if(gameData.firstTurn)
 		{
+			playedCard2.setImageResource(0);
+			
 			gameData.playedCard1 = card;
 			playedCard1.setImageResource(card.getImageResourceId());			
 		}
 		else
 		{
+			if(!isAllowed(card))
+			{
+				Toast.makeText(context, "You must play a same suite card when available!", Toast.LENGTH_LONG).show();
+				return;
+			}
 			gameData.playedCard2 = card;
 			playedCard2.setImageResource(card.getImageResourceId());			
 		}	
 		
+		cardImageView.setOnClickListener(null);		
+		cardImageView.setVisibility(View.INVISIBLE);
+		card.setIsVisible(false);
+		
 		if(pos>=5)
 		{
 			/* Open up folded card */
-			Log.i(LOG_TAG,"Opening human card at position: "+(pos-5));
+			Log.d(LOG_TAG,"Opening human card: " + gameData.hTableCards[pos-5].getValue() + " of " + gameData.hTableCards[pos-5].getSuite() + " at position: "+(pos-5));
 			hTableCardsImageViews[pos-5].setImageResource(gameData.hTableCards[pos-5].getImageResourceId());
 			gameData.hTableCards[pos-5].setIsVisible(true);
 			hTableCardsImageViews[pos-5].setOnClickListener(this);
@@ -316,18 +399,26 @@ public class SevenEight extends Activity implements OnClickListener
 			{
 				if(gameData.playedCard1.isGreater(gameData.playedCard2))
 				{
-					updateScore(true);
+					updateHandsScore(true);
 				}
 				else
 				{
-					updateScore(false);
+					updateHandsScore(false);
 				}
 			}
 			/* Human played a different suite card */
 			else
 			{
 				/* Check if trump suite played */
-				updateScore(true);
+				if(killed())
+				{
+					updateHandsScore(false);
+				}
+				else
+				{
+					updateHandsScore(true);
+				}
+				
 			}			
 		}
 	}
@@ -341,7 +432,8 @@ public class SevenEight extends Activity implements OnClickListener
 
 		if(gameData.firstTurn)
 		{
-			Log.i(LOG_TAG, "Machine playing first");			
+			playedCard2.setImageResource(0);
+
 			for(int i=0; i<5; i++)
 			{
 				if(gameData.mHandCards[i].getIsVisible())
@@ -369,7 +461,6 @@ public class SevenEight extends Activity implements OnClickListener
 		/* If not first turn, play according to the card played */
 		else
 		{			
-			Log.i(LOG_TAG, "Machine playing second");
 			List<Card> sameSuiteCards = new ArrayList<Card>();
 			Card highestCard = null, lowestCard = null;
 			boolean ishighestHand = false, isLowestHand = false;
@@ -471,9 +562,9 @@ public class SevenEight extends Activity implements OnClickListener
 					}
 				}				
 			}
-			/* Try and kill */
+			/* todo: Try and kill */
 			else
-			{
+			{				
 				for(int i=0; i<5; i++)
 				{
 					if(gameData.mHandCards[i].getIsVisible())
@@ -497,9 +588,15 @@ public class SevenEight extends Activity implements OnClickListener
 						}					
 					}					
 				}
+				
+				gameData.playedCard2 = cardToPlay; 
+				if(killed())
+				{
+					machineHand = true;
+				}
 			}
 		}
-		Log.i(LOG_TAG, "Machine playing card at position: "+ cardPos);
+		Log.d(LOG_TAG, "Machine playing card: "+ cardToPlay.getValue() + " of " + cardToPlay.getSuite());
 		if(gameData.firstTurn)
 		{
 			playedCard1.setImageResource(cardToPlay.getImageResourceId());			
@@ -515,7 +612,7 @@ public class SevenEight extends Activity implements OnClickListener
 		if(cardPos>=5)
 		{
 			/* Open up folded card */
-			Log.i(LOG_TAG,"Opening machine card at position: "+(cardPos-5));
+			Log.d(LOG_TAG,"Opening machine card: " + gameData.mTableCards[cardPos-5].getValue() + " of " + gameData.mTableCards[cardPos-5].getSuite() + " at position: "+(cardPos-5));
 			mTableCardsImageViews[cardPos-5].setImageResource(gameData.mTableCards[cardPos-5].getImageResourceId());
 			gameData.mTableCards[cardPos-5].setIsVisible(true);
 			mTableCardsImageViews[cardPos-5].setOnClickListener(this);
@@ -531,36 +628,124 @@ public class SevenEight extends Activity implements OnClickListener
 		{
 			gameData.playedCard2 = cardToPlay;
 			gameData.firstTurn = true;
-			updateScore(machineHand);
+			updateHandsScore(machineHand);
 		}
 	}
 	
-	private void updateScore(boolean machineHand)
-	{
-		CharSequence score;
+	private void updateHandsScore(boolean machineHand)
+	{		
 		int scoreValue;
 		
 		if(machineHand)
 		{
-			gameData.machineTurn = true;
-			score = machineScore.getText();
-			scoreValue = Integer.parseInt(score.toString());
+			gameData.machineTurn = true;			
+			scoreValue = gameData.machineHands++;
 			scoreValue++;
-			machineScore.setText(Integer.toString(scoreValue));			
-			Toast.makeText(context, "Machine won this hand!", Toast.LENGTH_LONG).show();
-			machinePlay();
+			machineHandsScore.setText(Integer.toString(scoreValue));
+			Log.i(LOG_TAG, "Machine won hand " + ++gameData.turnsOver + " M:H=" + gameData.machineHands + ":" + (gameData.turnsOver-gameData.machineHands));
+			
+			if(gameData.turnsOver < 15)
+			{
+				Toast.makeText(context, "Machine won this hand!", Toast.LENGTH_SHORT).show();
+				machinePlay();
+			}			
 		}
 		else
 		{
-			gameData.machineTurn = false;
-			score = humanScore.getText();
-			scoreValue = Integer.parseInt(score.toString());
-			scoreValue++;
-			humanScore.setText(Integer.toString(scoreValue));
-			Toast.makeText(context, "You won this hand!", Toast.LENGTH_LONG).show();
+			gameData.machineTurn = false;			
+			scoreValue = gameData.turnsOver - gameData.machineHands;
+			scoreValue++;			
+			humanHandsScore.setText(Integer.toString(scoreValue));
+			Log.i(LOG_TAG, "Human won hand " + ++gameData.turnsOver + " M:H=" + gameData.machineHands + ":" + (gameData.turnsOver-gameData.machineHands));
+			Toast.makeText(context, "You won this hand!", Toast.LENGTH_SHORT).show();
+		}		
+		
+		if(gameData.turnsOver == 15)
+		{
+			String msg;
+			
+			if(gameData.machineHands > gameData.machineHandsTodo)
+			{
+				GameData.machineGames++;
+				machineGameScore.setText(Integer.toString(GameData.machineGames));
+				msg = "Machine won this game!! and drew "+ (gameData.machineHands - gameData.machineHandsTodo) + " hands";
+				Log.i(LOG_TAG, "Machine won this game and drew " + (gameData.machineHands - gameData.machineHandsTodo) + " hands");
+			}
+			else if(gameData.machineHands > gameData.machineHandsTodo)
+			{
+				msg = "It's a tie!";
+				Log.i(LOG_TAG, "It's a tie!");				
+			}
+			else
+			{
+				GameData.humanGames++;
+				humanGameScore.setText(Integer.toString(GameData.humanGames));
+				msg = "Congrats! You won this game and drew " + ((gameData.turnsOver-gameData.machineHands)-(gameData.turnsOver-gameData.machineHandsTodo)) + " hands";
+				Log.i(LOG_TAG, "Human won this game and drew " + ((gameData.turnsOver-gameData.machineHands)-(gameData.turnsOver-gameData.machineHandsTodo)) + " hands");
+			}
+			
+			gameOver = new Dialog(context);
+			gameOver.setTitle(R.string.game_over_dialog_title);
+			gameOver.setContentView(R.layout.game_over_dialog);
+			gameOverMsg = (TextView) gameOver.findViewById(R.id.gameWonText);
+			gameOverMsg.setText(msg);
+			
+			Button okButton = (Button) gameOver.findViewById(R.id.gameOverOK);
+			okButton.setOnClickListener(this);			
+						
+			gameOver.show();			
+		}
+	}
+	
+	private boolean isAllowed(Card cardToPlay)
+	{
+		Card playedCard = gameData.playedCard1;
+		
+		if(playedCard.isSameSuite(cardToPlay))
+			return true;
+		
+		//check if human player has a same suite card
+		for(Card card: gameData.hHandCards)
+		{			
+			if(card.isSameSuite(playedCard) && card.getIsVisible())
+			{
+				Log.d(LOG_TAG,"Human has a " + playedCard.getSuite() + " suite card! cannot play a " + cardToPlay.getSuite() + " card");
+				return false;
+			}
 		}
 		
-/*		playedCard1.setVisibility(View.INVISIBLE);
-		playedCard2.setVisibility(View.INVISIBLE);
-*/	}
+		for(Card card: gameData.hTableCards)
+		{			
+			if(card.isSameSuite(playedCard) && card.getIsVisible())
+			{
+				Log.d(LOG_TAG,"Human has a " + playedCard.getSuite() + " suite card! cannot play a " + cardToPlay.getSuite() + " card");
+				return false;
+			}
+		}
+		
+		Log.d(LOG_TAG,"Human does not have a " + playedCard.getSuite() + " suite card! OK to play a different suite");
+		//human player doesn't have a same suite card
+		return true;
+	}
+	
+	private boolean killed()
+	{
+		if(gameData.playedCard2.getSuite() == gameData.trumpSuite)
+		{
+			if(gameData.playedCard1.getSuite() == gameData.trumpSuite)
+			{
+				/* both are Trump suite cards */
+				if(gameData.playedCard2.isGreater(gameData.playedCard1))
+				{					
+					return true;
+				}
+			}
+			else
+			{
+				Log.d(LOG_TAG, "Trump suite played! someone got killed!");
+				return true;
+			}
+		}
+		return false;
+	}
 }

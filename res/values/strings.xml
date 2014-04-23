@@ -14,4 +14,7 @@
     <string name="score_zero">0</string>
     
     <string name="hukum_dialog_title">Select Trump Suite</string>
+    <string name="machine_hukum_dialog_title">Trump Suite for the game</string>
+    
+    <string name="game_over_dialog_title">Game Over!</string>
 </resources>

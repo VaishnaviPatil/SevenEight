@@ -1,0 +1,22 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="5dp"
+    android:layout_gravity="center" >
+
+    <ImageView
+        android:id="@+id/hukumSelected"
+        android:layout_centerHorizontal="true"
+        android:layout_width="40dp"
+        android:layout_height="40dp"        
+        android:src="@drawable/spade" />
+
+	<Button
+	    android:layout_below="@id/hukumSelected"
+	    android:id="@+id/OK"	    
+	    android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_centerHorizontal="true"
+		android:text="OK" />
+</RelativeLayout>
