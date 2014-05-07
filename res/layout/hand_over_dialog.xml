@@ -1,0 +1,25 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="5dp"
+    android:layout_gravity="center" >
+
+    <TextView
+        android:id="@+id/handWonText"
+        android:layout_centerHorizontal="true"        
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Machine won this hand!"
+        android:padding="5dp" />
+
+	<Button
+	    android:layout_below="@id/handWonText"
+	    android:id="@+id/handOverOK"	    
+	    android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_centerHorizontal="true"
+		android:background="#49311c"
+		android:textColor="@android:color/white"
+		android:text="OK" />
+</RelativeLayout>
